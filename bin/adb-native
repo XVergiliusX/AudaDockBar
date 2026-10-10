@@ -1,0 +1,9 @@
+#!/usr/bin/python
+"""Load the local View-menu extension only inside Audacious."""
+import os, sys
+from pathlib import Path
+extension = Path.home() / '.local/share/adb/native-menu.so'
+env = os.environ.copy()
+if extension.is_file():
+    env['LD_PRELOAD'] = str(extension) + (' ' + env['LD_PRELOAD'] if env.get('LD_PRELOAD') else '')
+os.execve('/usr/bin/audacious', ['/usr/bin/audacious', *sys.argv[1:]], env)

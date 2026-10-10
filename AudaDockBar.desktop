@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=AudaDockBar
+Comment=Audacious dock for the Omarchy bar
+Icon=audacious
+Exec=adb-launch %U
+TryExec=adb-launch
+Terminal=false
+Categories=AudioVideo;Audio;Player;

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "adb.audadockbar",
+  "name": "AudaDockBar",
+  "version": "1.0.0",
+  "author": "adb",
+  "description": "Audacious dock with cover art, YouTube audio, equalizer and playlist controls across workspaces",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Dock.qml"
+  },
+  "barWidget": {
+    "displayName": "AudaDockBar",
+    "category": "Media",
+    "allowMultiple": false,
+    "defaultSection": "left"
+  }
+}

@@ -1,0 +1,13 @@
+#!/usr/bin/python
+"""Start Audacious manually in the dock; retain file/URL arguments."""
+import json, subprocess, sys
+args = sys.argv[1:]
+command = ['omarchy-shell', 'adb.audadockbar']
+command += ['launch', json.dumps(args)] if args else ['toggle']
+try:
+    result = subprocess.run(command)
+    if result.returncode == 0:
+        raise SystemExit(0)
+except OSError:
+    pass
+subprocess.Popen([str(__import__('pathlib').Path.home() / '.local/bin/adb-native'), '--show-main-window', *args])
