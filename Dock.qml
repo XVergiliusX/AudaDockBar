@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls as Controls
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.Mpris
 import qs.Commons
 import qs.Ui
 
@@ -9,6 +10,29 @@ BarWidget {
   id: root
   moduleName: "adb.audadockbar"
   property var state: ({running:false, docked:true})
+  readonly property var audaciousPlayer: {
+    var players = Mpris.players ? Mpris.players.values : []
+    for (var player of players)
+      if (player.dbusName === "org.mpris.MediaPlayer2.audacious") return player
+    return null
+  }
+  // Observe the existing native MPRIS service; never launch audio at login.
+  function attachRunningPlayer() {
+    if (!audaciousPlayer || bridge.running) return
+    root.state = Object.assign({}, root.state, {
+      running:true,
+      status:audaciousPlayer.isPlaying ? "playing" : "paused"
+    })
+    pendingCommands = [JSON.stringify({action:"expanded", value:opened}) + "\n"]
+    bridge.running = true
+  }
+  Component.onCompleted: Qt.callLater(root.attachRunningPlayer)
+  onAudaciousPlayerChanged: Qt.callLater(root.attachRunningPlayer)
+  Timer {
+    id:bridgeRecovery
+    interval:2000
+    onTriggered:root.attachRunningPlayer()
+  }
   property bool opened: false
   property bool eqOpen: false
   property bool playlistOpen: false
@@ -26,7 +50,7 @@ BarWidget {
   property bool popoutSwitchClosing: false
   readonly property color fg: bar ? bar.foreground : Color.foreground
   readonly property bool remaining: state.remaining !== false
-  readonly property string trackInfo: state.displayTitle || "No playback"
+  readonly property string trackInfo: state.displayTitle || (audaciousPlayer ? audaciousPlayer.trackTitle || audaciousPlayer.identity : "No playback")
   readonly property string barTime: state.stream ? (state.streamState || "disc")
     : (state.duration > 0 ? (remaining ? "−" : "") + stamp(remaining ? Math.max(0,state.duration - (state.time || 0)) : state.time) : "—")
   readonly property bool docked: state.docked !== false
@@ -129,8 +153,9 @@ BarWidget {
     onExited: {
       root.bridgeReady = false
       root.pendingCommands = []
-      root.state = Object.assign({}, root.state, {running:false, docked:true})
-      root.close()
+      root.state = Object.assign({}, root.state, {running:!!root.audaciousPlayer})
+      if (root.audaciousPlayer) bridgeRecovery.restart()
+      else root.close()
     }
     stdout: SplitParser {
       onRead: function(line) {
@@ -153,7 +178,7 @@ BarWidget {
     function editPlaylist(value: bool): void { root.open(); root.playlistOpen = true; root.editOrder = value }
     function toggleTime(): void { root.send("remaining", !root.remaining) }
     function menu(): void { root.open(); root.fileOpen = true;  }
-    function inspect(): string { return JSON.stringify({opened:root.opened, equalizer:root.eqOpen, playlist:root.playlistOpen, docked:root.docked, visible:root.visible, doubleSize:root.state.doubleSize === true, width:popup.contentWidth, height:popup.contentHeight, panelHeights:[playerColumn.height,eqColumn.height,playlistColumn.height], coverHeight:coverArea.height, mainOrder:[mainTitle.y,playbackRow.y,seekBar.y,volumeControls.y,coverArea.y,navigationButtons.y], seekVisible:seekBar.visible, seekValue:seekBar.value, timeWidth:trackTime.width, coverStatus:coverImage.status, dropdownWidth:listsDropdown.width, playlistWidth:playlistColumn.width, fullNames:root.fullListNames, editOrder:root.editOrder, presetWidth:presetDropdown.width, barPositions:[compactControls.x,compactTitle.x,compactTime.x], popupAlignRight:root.popupAlignRight, popupOrigin:popup.cardOrigin, titleWidth:compactTitle.width, equalizerOpacity:eqColumn.opacity, timeLabel:root.barTime, trackInfo:root.trackInfo, menu:root.fileOpen, state:root.state}) }
+    function inspect(): string { return JSON.stringify({opened:root.opened, bridgeRunning:bridge.running, playerDetected:!!root.audaciousPlayer, equalizer:root.eqOpen, playlist:root.playlistOpen, docked:root.docked, visible:root.visible, doubleSize:root.state.doubleSize === true, width:popup.contentWidth, height:popup.contentHeight, panelHeights:[playerColumn.height,eqColumn.height,playlistColumn.height], coverHeight:coverArea.height, mainOrder:[mainTitle.y,playbackRow.y,seekBar.y,volumeControls.y,coverArea.y,navigationButtons.y], seekVisible:seekBar.visible, seekValue:seekBar.value, timeWidth:trackTime.width, coverStatus:coverImage.status, dropdownWidth:listsDropdown.width, playlistWidth:playlistColumn.width, fullNames:root.fullListNames, editOrder:root.editOrder, presetWidth:presetDropdown.width, barPositions:[compactControls.x,compactTitle.x,compactTime.x], popupAlignRight:root.popupAlignRight, popupOrigin:popup.cardOrigin, titleWidth:compactTitle.width, equalizerOpacity:eqColumn.opacity, timeLabel:root.barTime, trackInfo:root.trackInfo, menu:root.fileOpen, state:root.state}) }
   }
   Row {
     id: compact

@@ -1,6 +1,6 @@
 # AudaDockBar
 
-Version 1.0.0 — first public release.
+Version 1.0.1 — bar reconnection hotfix.
 
 A compact Audacious player for the Omarchy bar. Internal names use `adb`; the plugin ID is `adb.audadockbar`.
 
@@ -14,7 +14,7 @@ A compact Audacious player for the Omarchy bar. Internal names use `adb`; the pl
 - Previous/Next select the neighboring file or stream in displayed list order.
 - View-menu dock mode, double size and native-player Fast Dock.
 - Optional on-demand YouTube audio via yt-dlp and ffmpeg.
-- No player or bridge autostart at login; opening the player starts the bridge.
+- No player autostart at login. The bridge attaches automatically only when Audacious is already running; opening the player can start it manually.
 
 ## Requirements
 
@@ -68,6 +68,7 @@ Menu → View → Dock mode undocks. Native Audacious → View → Dock mode or 
 ./runtime/build-native-menu.sh
 omarchy plugin validate .
 dbus-run-session -- /usr/bin/python tests/test_reorder.py
+dbus-run-session -- /usr/bin/python tests/test_attach.py
 python tests/check_release.py
 ```
 

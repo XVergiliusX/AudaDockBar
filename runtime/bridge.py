@@ -311,6 +311,7 @@ def snapshot():
             songs=[entry['label'] for entry in entries], songEntries=entries, playlists=playlist_catalog)
     return state
 
+last_snapshot = None
 buffer = b''
 while True:
     ready, _, _ = select.select([sys.stdin], [], [], 1)
@@ -337,11 +338,13 @@ while True:
                 elif dialog.returncode not in (0, 1):
                     error = 'Could not open the file dialog.'
         state = snapshot()
+        last_snapshot = state
         print(json.dumps(state), flush=True)
         if not state['running']: break
     except Exception as exc:
-        print(json.dumps(dict(prefs, running=False, error=str(exc).split('\n')[0])), flush=True)
-        if not alive(): break
+        still_running = alive()
+        print(json.dumps(dict(last_snapshot or prefs, running=still_running, error=str(exc).split('\n')[0])), flush=True)
+        if not still_running: break
 
 for dialog in dialogs:
     if dialog.poll() is None: dialog.terminate()

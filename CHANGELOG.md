@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+- Reattach the dock bridge to an already running Audacious after widget/shell reloads.
+- Recover an interrupted bridge without hiding the compact controls or reopening the popup.
+- Keep manual startup: passive MPRIS detection never starts the audio engine.
+
 ## 1.0.0
 
 First release of AudaDockBar for the Quickshell-based Omarchy shell.
