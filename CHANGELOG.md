@@ -1,21 +1,17 @@
 # Changelog
 
-## 1.0.1
-
-- Reattach the dock bridge to an already running Audacious after widget/shell reloads.
-- Recover an interrupted bridge without hiding the compact controls or reopening the popup.
-- Keep manual startup: passive MPRIS detection never starts the audio engine.
-
 ## 1.0.0
 
 First release of AudaDockBar for the Quickshell-based Omarchy shell.
 
-- Compact bar playback controls with clickable track title and time.
-- Stable popup alignment, artwork and radio metadata.
-- Equalizer presets and disabled-state dimming.
-- Playlist management, aliases and safe entry ordering.
-- Explicit previous/next navigation for streams and files.
-- Dock mode, double size and native Fast Dock integration.
-- Optional on-demand YouTube audio.
-- Manual startup and portable installation scripts.
-- Source-only packaging with privacy checks.
+- Music controls, song information and radio metadata in the bar.
+- A player popup that stays in place as song titles change.
+- Equalizer presets, playlist management, track aliases and entry ordering.
+- Previous/next navigation for both streams and files.
+- Dock mode, double size and Fast Dock from the native player.
+- Optional YouTube audio and manual player startup.
+- Portable installation and source packaging with privacy checks.
+
+### Included hotfix
+
+The bar now reconnects automatically when Audacious is already running after a widget or shell reload. If the connection is interrupted, playback controls stay visible while it recovers, without opening the popup or starting Audacious on its own.

@@ -1,30 +1,32 @@
 # AudaDockBar
 
-Version 1.0.1 — bar reconnection hotfix.
+Version 1.0.0
 
-A compact Audacious player for the Omarchy bar. Internal names use `adb`; the plugin ID is `adb.audadockbar`.
+AudaDockBar brings Audacious into the Omarchy bar, so your music stays within reach as you move between workspaces. See what's playing, pause or skip a track, and click the title when you want the full player.
 
-## Features
+The expanded player keeps the familiar essentials together: playback controls, progress, volume, cover art, playlists and an equalizer. You can leave it docked, switch back to the normal Audacious window, or use double size for easier reading.
 
-- Click the track title to open or collapse the player.
-- Playback controls, elapsed/remaining time, volume, artwork and stream metadata.
-- A fixed popup anchor that follows the bar position without moving when the title changes.
-- Equalizer with built-in and custom presets; disabled controls are dimmed.
-- Playlist creation, renaming, track aliases and entry ordering.
-- Previous/Next select the neighboring file or stream in displayed list order.
-- View-menu dock mode, double size and native-player Fast Dock.
-- Optional on-demand YouTube audio via yt-dlp and ffmpeg.
-- No player autostart at login. The bridge attaches automatically only when Audacious is already running; opening the player can start it manually.
+## What it does
+
+- Shows the current song and radio metadata in the bar, with playback controls and elapsed or remaining time.
+- Keeps the player popup in place when a longer song title appears.
+- Lets you create playlists, rename entries without changing the files, and reorder tracks while music keeps playing.
+- Includes equalizer presets and lets you save your own.
+- Skips to the next or previous entry for both music files and radio streams.
+- Offers optional YouTube audio through yt-dlp and ffmpeg.
+- Reconnects to an already running Audacious after the widget or shell reloads.
+
+Audacious starts when you choose to use it. AudaDockBar does not start the player at login.
 
 ## Requirements
 
-Developed with Audacious 4.6, Qt 6 and the Quickshell-based Omarchy shell. Other versions need verification. The native extension uses Audacious's public libaudcore playlist API and Qt event filters.
+AudaDockBar was developed with Audacious 4.6, Qt 6 and the Quickshell-based Omarchy shell. Other versions have not been verified.
 
-Arch packages: `audacious`, `audacious-plugins`, `python-gobject`, `qt6-base`, `gcc`, `pkgconf`, `zenity`. The Omarchy shell supplies Quickshell and the shared QML UI components. Optional YouTube support needs `yt-dlp`, its supported JavaScript runtime, and `ffmpeg`.
+On Arch, the required packages are `audacious`, `audacious-plugins`, `python-gobject`, `qt6-base`, `gcc`, `pkgconf` and `zenity`. Omarchy provides Quickshell and the shared UI components. Optional YouTube playback also needs `yt-dlp`, a JavaScript runtime supported by yt-dlp, and `ffmpeg`.
 
-The extension must be rebuilt after incompatible Qt/Audacious updates.
+The native extension may need rebuilding after incompatible Qt or Audacious updates.
 
-## Install
+## Installation
 
 From the project directory, run:
 
@@ -32,54 +34,52 @@ From the project directory, run:
 ./install.sh
 ```
 
-The installer copies the runtime and launchers into the current user's directories, builds the native extension, validates the manifest, and enables the bar widget. It preserves other bar entries and does not install packages or change keyboard shortcuts. Restart Audacious if it was already running to load the native extension.
+The installer copies the plugin and launchers into your user directories, builds the native extension and adds the widget to the bar. Existing bar entries are preserved. Dependencies and keyboard shortcuts are left for you to configure.
 
-For an optional Hyprland Lua shortcut, use your own preferred free key:
+If Audacious was already running, restart it once to load the native extension.
+
+For an optional Hyprland Lua shortcut, choose a free key combination:
 
 ```lua
 o.bind("SUPER + SHIFT + A", "AudaDockBar", os.getenv("HOME") .. "/.local/bin/adb-launch")
 ```
 
-The launchers are `adb-launch` and `adb-native`, leaving the Android `adb` command available. A desktop launcher template is in `AudaDockBar.desktop`; add `~/.local/bin` to the desktop session's PATH before using it.
+The launchers are named `adb-launch` and `adb-native`, so they do not conflict with Android's `adb` command. A desktop launcher template is included as `AudaDockBar.desktop`; using it requires `~/.local/bin` in your desktop session's PATH.
 
-## Local data
+## Using the player
 
-The source repository contains no playlists, aliases, listening history, account credentials, cookies or music files. Runtime data stays outside the source directory:
+Click the song title in the bar to open or close the player. Click the time to switch between elapsed and remaining time. For radio, **Live** means audio is advancing, **reco** means waiting or reconnecting, and **disc** means disconnected.
 
-- Settings and custom EQ presets: `~/.config/audacious/adb.json`.
-- Audacious manages its own playlists and playback configuration.
-- Runtime: `~/.local/share/adb/`.
-- Plugin: `~/.config/omarchy/plugins/adb.audadockbar/`.
-- Backups: `~/.local/state/adb/`.
+Click the **Equalizer** heading to turn it on or off. Changing a preset creates a **Custom** curve; use **+** to save it as a new preset. In the playlist, the reorder button switches the entry controls to Up and Down. Renaming an entry only changes its display name, and deleting a playlist leaves your media files intact.
 
-A normal installed preferences file may contain local media URIs. Do not publish that file. No account or browser cookies are required for public YouTube audio. The optional helper binds only to loopback; its default port is 19086.
+Use **Menu → View → Dock mode** to undock. To dock again, enable **View → Dock mode** in Audacious or run `adb-launch`. The minimize button in Audacious's Winamp main-player window also acts as **Fast Dock**.
 
-## Controls
+## Settings and local data
 
-The main panel has a one-line title, playback controls with time on the same row, progress, volume, artwork, then menus. The time in the bar is an unhighlighted clickable label that switches elapsed/remaining time. Radio playback shows Live only while audio advances; reco means reconnecting/waiting, disc means disconnected, and Pause means paused.
+Settings and custom presets are saved in `~/.config/audacious/adb.json`. Audacious keeps its own playlists and playback settings. The installed runtime lives in `~/.local/share/adb/`, the plugin in `~/.config/omarchy/plugins/adb.audadockbar/`, and backups in `~/.local/state/adb/`.
 
-Click the Equalizer heading to enable/disable it. Presets use a floating selector; manual changes become Custom, and + saves the curve. Click the playlist heading's reorder control to replace rename/delete actions with Up/Down. Moving an entry preserves current playback, queue and selection. Track aliases do not modify files or tags. Deleting a playlist does not delete its media.
+Personal settings, playlists, credentials and music are not included in the source archive. Your preferences can contain local media paths, so keep that file private. Public YouTube audio does not require an account or browser cookies; its optional helper listens only on localhost, using port 19086 by default.
 
-Menu → View → Dock mode undocks. Native Audacious → View → Dock mode or `adb-launch` docks again. The native Winamp main-player minimize button becomes Fast Dock. Auxiliary dialogs retain their normal behavior.
-
-## Development and verification
+## Development
 
 ```sh
 ./runtime/build-native-menu.sh
 omarchy plugin validate .
 dbus-run-session -- /usr/bin/python tests/test_reorder.py
 dbus-run-session -- /usr/bin/python tests/test_attach.py
-python tests/check_release.py
 ```
 
-The reorder test uses an isolated, muted Audacious instance and temporary generated audio. It tests both directions, playback continuity, stream URI ordering and stale/out-of-range rejection. It does not use the normal session's playlists.
+The reorder test runs an isolated, muted Audacious instance with temporary audio. It checks playback continuity, entry ordering and rejection of stale requests without touching your normal playlists. The attachment test checks that observing the player does not start it or change its settings.
 
-The release check permits only the source-file allowlist, rejects symlinks, caches and binaries, and checks for the current account name, literal home paths and common private-key/token formats. This is a focused packaging check, not a general security audit.
+Internal names use `adb`, and the session-bus service is `org.adb.AudaDockBar`. Test overrides are available through `ADB_DBUS_NAME`, `ADB_MPRIS_NAME`, `ADB_PREFS` and `ADB_YOUTUBE_PORT`.
 
-The internal session-bus service is `org.adb.AudaDockBar`; optional test overrides are `ADB_DBUS_NAME`, `ADB_MPRIS_NAME`, `ADB_PREFS` and `ADB_YOUTUBE_PORT`.
+## Creating a source archive
 
-## Publishing
+```sh
+python tests/check_release.py
+./package.sh
+```
 
-Publish only this project directory after running the release check. A clean source archive can be created with `./package.sh`; it is built from an explicit file allowlist. Generated libraries, local state, screenshots, logs, caches, editor backups and Git history are excluded. Review the archive before uploading. No remote repository is configured by these scripts.
+The archive includes only the listed source files. Generated libraries, local settings, logs, caches and Git history are excluded. The release check also looks for personal home paths, the current account name and common credential formats. Remove any compiled library from the source directory before packaging.
 
-A distribution license has not been specified yet.
+A distribution license has not been chosen yet.
