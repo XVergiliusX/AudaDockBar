@@ -1,6 +1,8 @@
 # AudaDockBar
 
-Version 1.0.1
+Version 1.0.2
+
+Maintained by [XVergiliusX](https://github.com/XVergiliusX). The internal `adb` prefix is an abbreviation of AudaDockBar.
 
 AudaDockBar brings Audacious into the Omarchy bar, so your music stays within reach as you move between workspaces. See what's playing, pause or skip a track, and click the title when you want the full player.
 

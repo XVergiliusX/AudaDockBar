@@ -1,6 +1,7 @@
 #!/usr/bin/python
 """Check the explicit release allowlist; never include installation state."""
 import getpass
+import json
 import re
 from pathlib import Path
 
@@ -15,6 +16,10 @@ FILES = [
 
 def check():
     problems = []
+    manifest = json.loads((ROOT / 'manifest.json').read_text())
+    public_author = manifest.get('author', '').strip()
+    if not public_author or public_author.casefold() in ('adb', 'audadockbar'):
+        problems.append('Set the plugin author to the repository owner, not the project abbreviation.')
     actual = {str(p.relative_to(ROOT)) for p in ROOT.rglob('*') if (p.is_file() or p.is_symlink()) and '.git' not in p.relative_to(ROOT).parts}
     for name in sorted(actual - set(FILES)):
         problems.append('Unexpected release file: ' + name)
@@ -26,8 +31,9 @@ def check():
         re.compile(r'AKIA[0-9A-Z]{16}'),
     ]
     account = getpass.getuser()
+    account_pattern = None
     if len(account) >= 3 and account.lower() not in ('adb', 'root', 'runner'):
-        patterns.append(re.compile(re.escape(account), re.IGNORECASE))
+        account_pattern = re.compile(re.escape(account), re.IGNORECASE)
     for name in FILES:
         path = ROOT / name
         if not path.is_file() or path.is_symlink():
@@ -38,7 +44,9 @@ def check():
             problems.append('Unexpected binary: ' + name)
             continue
         text = data.decode('utf-8')
-        if any(pattern.search(text) for pattern in patterns):
+        # A public GitHub handle may legitimately contain the local account name.
+        private_text = text.replace(public_author, '') if public_author else text
+        if any(pattern.search(text) for pattern in patterns) or (account_pattern and account_pattern.search(private_text)):
             problems.append('Private identifier/path or credential pattern: ' + name)
     if problems:
         raise SystemExit('\n'.join(problems))

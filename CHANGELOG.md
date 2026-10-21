@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2 — 2026-10-21
+
+- Correct the plugin author to the repository owner, XVergiliusX.
+- Clarify that the internal `adb` prefix abbreviates AudaDockBar.
+- Check release metadata for placeholder authors while allowing the public author handle in privacy checks.
+
 ## 1.0.1 — 2026-10-21
 
 - Preserve file lists across Quickshell IPC using an object envelope. A single file previously arrived as a string and was processed character by character, causing each slash to import the filesystem root.
