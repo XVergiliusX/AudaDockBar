@@ -3,7 +3,9 @@
 import json, subprocess, sys
 args = sys.argv[1:]
 command = ['omarchy-shell', 'adb.audadockbar']
-command += ['launch', json.dumps(args)] if args else ['toggle']
+# qs interprets a top-level [...] argument as an IPC argument list.
+# An object keeps the entire file list inside one string argument.
+command += ['launch', json.dumps({'uris': args})] if args else ['toggle']
 try:
     result = subprocess.run(command)
     if result.returncode == 0:

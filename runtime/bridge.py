@@ -2,6 +2,7 @@
 """Audacious DBus bridge. No shell interpolation or changes to audio files."""
 import json, os, select, subprocess, sys, time, uuid
 from pathlib import Path
+from urllib.parse import urlsplit, unquote
 from gi.repository import Gio, GLib
 from stream_state import StreamConnection
 from eq_presets import BUILTINS, matches
@@ -82,6 +83,63 @@ def media_target(value):
         return youtube_audio.stream_url(source)
     return target
 
+def file_targets(values, allow_folders=False):
+    """Validate the whole request before Audacious can scan any directory."""
+    if not isinstance(values, list) or not values:
+        raise ValueError('Expected a list of files; no files were opened.')
+    targets = []
+    protected = ('/bin', '/boot', '/dev', '/etc', '/lib', '/lib64', '/opt',
+                 '/proc', '/root', '/run', '/sbin', '/sys', '/tmp', '/usr', '/var')
+    for value in values:
+        if not isinstance(value, str) or not value or '\x00' in value:
+            raise ValueError('Invalid file name; no files were opened.')
+        if '://' in value and not value.startswith('file://'):
+            targets.append(value)
+            continue
+        if value.startswith('file://'):
+            uri = urlsplit(value)
+            if uri.netloc not in ('', 'localhost') or not uri.path.startswith('/'):
+                raise ValueError('Invalid local file URL; no files were opened.')
+            path = Path(unquote(uri.path))
+        else:
+            path = Path(value).expanduser()
+        path = path.resolve(strict=True)
+        if path.is_dir():
+            if not allow_folders:
+                raise ValueError('A folder was passed instead of a file. Use Open Folder to import music folders.')
+            removable = path.is_relative_to('/run/media') and path != Path('/run/media')
+            if path in (Path('/'), Path('/home')) or (not removable and any(path.is_relative_to(base) for base in protected)):
+                raise ValueError('System folders cannot be imported as music folders.')
+        elif not path.is_file():
+            raise ValueError('This path is not a regular file.')
+        targets.append(path.as_uri())
+    return targets
+
+def open_targets(values, allow_folders=False, append=False):
+    record = {'input': values, 'allowFolders': allow_folders, 'append': append}
+    try:
+        urls = file_targets(values, allow_folders)
+        urls = [media_target(url) for url in urls]
+        ensure()
+        if append:
+            for url in urls:
+                call('AddUrl', '(s)', (url,))
+        else:
+            call('OpenList', '(as)', (urls,))
+        record.update(status='opened', uris=urls)
+    except Exception as exc:
+        record.update(status='rejected', error=str(exc).split('\n')[0])
+        raise
+    finally:
+        # Keep only the last request, with private permissions, for diagnosis.
+        try:
+            log = Path(os.environ.get('ADB_OPEN_LOG', str(Path(os.environ.get('XDG_STATE_HOME', str(Path.home() / '.local/state'))) / 'adb/last-file-open.json')))
+            log.parent.mkdir(parents=True, exist_ok=True)
+            with os.fdopen(os.open(log, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), 'w') as handle:
+                json.dump(record, handle)
+        except OSError:
+            pass
+
 def refresh_playlists():
     global playlist_catalog
     original = call('GetActivePlaylist')
@@ -119,9 +177,7 @@ def action(msg):
         return
     if name == 'start': ensure(); return
     if name == 'launch-files':
-        ensure()
-        urls = [media_target(item) if '://' in item else Path(item).resolve().as_uri() for item in value]
-        if urls: call('OpenList', '(as)', (urls,))
+        open_targets(value)
         return
     if name in ('openfiles', 'openfolder'):
         ensure()
@@ -129,7 +185,7 @@ def action(msg):
         if name == 'openfolder': args.append('--directory')
         else: args += ['--multiple', '--separator=\x1f']
         # Collect dialog output outside the polling loop: cancellation changes nothing.
-        dialogs.append(subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True))
+        dialogs.append((subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True), name == 'openfolder'))
         return
     if name == 'library':
         ensure()
@@ -235,8 +291,7 @@ def action(msg):
     elif name == 'volumedown':
         v = max(0, call('Volume')[0] - 5); call('SetVolume', '(ii)', (v, v))
     elif name == 'openurl':
-        target = media_target(value)
-        if target: call('OpenList', '(as)', ([target],))
+        if value: open_targets([value])
     elif name == 'volume': call('SetVolume', '(ii)', (int(value), int(value)))
     elif name == 'seek': call('Seek', '(u)', (max(0, int(value)),))
     elif name == 'eq': call('EqualizerActivate', '(b)', (bool(value),))
@@ -247,10 +302,7 @@ def action(msg):
     elif name == 'flat':
         call('SetEq', '(dad)', (0.0, [0.0]*10)); prefs['eqSelected'] = 'builtin:neutral'; save()
     elif name == 'add':
-        target = media_target(value)
-        if target and ':' not in target:
-            target = Path(target).expanduser().resolve().as_uri()
-        if target: call('AddUrl', '(s)', (target,))
+        if value: open_targets([value], append=True)
     elif name == 'jump': call('Jump', '(u)', (int(value),)); call('Play')
     elif name == 'delete': call('Delete', '(u)', (int(value),))
     elif name == 'playlist':
@@ -326,14 +378,12 @@ while True:
             except Exception as exc:
                 error = str(exc).split('\n')[0]
     try:
-        for dialog in dialogs[:]:
+        for dialog, allow_folders in dialogs[:]:
             if dialog.poll() is not None:
                 output = dialog.communicate()[0].rstrip('\n')
-                dialogs.remove(dialog)
+                dialogs.remove((dialog, allow_folders))
                 if dialog.returncode == 0 and output:
-                    ensure()
-                    urls = [Path(path).resolve().as_uri() for path in output.split('\x1f')]
-                    call('OpenList', '(as)', (urls,))
+                    open_targets(output.split('\x1f'), allow_folders=allow_folders)
                     error = ''
                 elif dialog.returncode not in (0, 1):
                     error = 'Could not open the file dialog.'
@@ -346,5 +396,5 @@ while True:
         print(json.dumps(dict(last_snapshot or prefs, running=still_running, error=str(exc).split('\n')[0])), flush=True)
         if not still_running: break
 
-for dialog in dialogs:
+for dialog, _ in dialogs:
     if dialog.poll() is None: dialog.terminate()

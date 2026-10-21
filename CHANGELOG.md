@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 — 2026-10-21
+
+- Preserve file lists across Quickshell IPC using an object envelope. A single file previously arrived as a string and was processed character by character, causing each slash to import the filesystem root.
+- Reject malformed file lists and directory arguments in file-opening actions; block system directories in the explicit folder picker.
+- Keep a private record of the latest file-open request and add isolated playback regression checks.
+- Write versioned source archives outside the project folder.
+
 ## 1.0.0
 
 First release of AudaDockBar for the Quickshell-based Omarchy shell.

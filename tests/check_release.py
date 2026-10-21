@@ -10,7 +10,7 @@ FILES = [
     'install.sh', 'package.sh', 'bin/adb-launch', 'bin/adb-native',
     'runtime/bridge.py', 'runtime/youtube_audio.py', 'runtime/stream_state.py',
     'runtime/eq_presets.py', 'runtime/radio_info.py', 'runtime/native-menu.cpp',
-    'runtime/build-native-menu.sh', 'tests/test_reorder.py', 'tests/test_attach.py', 'tests/check_release.py',
+    'runtime/build-native-menu.sh', 'tests/test_reorder.py', 'tests/test_attach.py', 'tests/test_file_open.py', 'tests/check_release.py',
 ]
 
 def check():

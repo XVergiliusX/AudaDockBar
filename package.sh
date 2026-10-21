@@ -2,7 +2,7 @@
 set -euo pipefail
 source_dir=$(cd -- "$(dirname -- "$0")" && pwd)
 python - "$source_dir" <<'PY'
-import importlib.util, sys, tarfile
+import importlib.util, json, sys, tarfile
 from pathlib import Path
 root = Path(sys.argv[1])
 spec = importlib.util.spec_from_file_location('adb_release', root / 'tests/check_release.py')
@@ -11,7 +11,8 @@ sys.dont_write_bytecode = True
 spec.loader.exec_module(module)
 module.check()
 # The archive lives outside the source folder; no private installation is read.
-target = root.parent / 'AudaDockBar-source.tar.gz'
+version = json.loads((root / 'manifest.json').read_text())['version']
+target = root.parent / f'AudaDockBar-{version}-source.tar.gz'
 def clean(info):
     info.uid = info.gid = 0
     info.uname = info.gname = ''

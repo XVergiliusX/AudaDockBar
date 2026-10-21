@@ -1,6 +1,6 @@
 # AudaDockBar
 
-Version 1.0.0
+Version 1.0.1
 
 AudaDockBar brings Audacious into the Omarchy bar, so your music stays within reach as you move between workspaces. See what's playing, pause or skip a track, and click the title when you want the full player.
 
@@ -67,9 +67,12 @@ Personal settings, playlists, credentials and music are not included in the sour
 omarchy plugin validate .
 dbus-run-session -- /usr/bin/python tests/test_reorder.py
 dbus-run-session -- /usr/bin/python tests/test_attach.py
+dbus-run-session -- /usr/bin/python tests/test_file_open.py
 ```
 
 The reorder test runs an isolated, muted Audacious instance with temporary audio. It checks playback continuity, entry ordering and rejection of stale requests without touching your normal playlists. The attachment test checks that observing the player does not start it or change its settings.
+
+The file-opening test checks names with spaces and URI escapes, multiple files, and rejection of malformed lists and system-folder imports. Open Files and desktop file opening accept files; use Open Folder for music directories. The last file-open request is saved privately in `~/.local/state/adb/last-file-open.json` for troubleshooting.
 
 Internal names use `adb`, and the session-bus service is `org.adb.AudaDockBar`. Test overrides are available through `ADB_DBUS_NAME`, `ADB_MPRIS_NAME`, `ADB_PREFS` and `ADB_YOUTUBE_PORT`.
 
@@ -80,6 +83,6 @@ python tests/check_release.py
 ./package.sh
 ```
 
-The archive includes only the listed source files. Generated libraries, local settings, logs, caches and Git history are excluded. The release check also looks for personal home paths, the current account name and common credential formats. Remove any compiled library from the source directory before packaging.
+The archive is written next to the project folder as `AudaDockBar-<version>-source.tar.gz` and includes only the listed source files. Generated libraries, local settings, logs, caches and Git history are excluded. The release check also looks for personal home paths, the current account name and common credential formats. Remove any compiled library from the source directory before packaging.
 
 A distribution license has not been chosen yet.

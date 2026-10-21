@@ -165,7 +165,19 @@ BarWidget {
   }
   IpcHandler {
     target: "adb.audadockbar"
-    function launch(args: string): void { root.open(); root.send("launch-files", JSON.parse(args)) }
+    function launch(args: string): void {
+      var payload = JSON.parse(args)
+      var files = payload && payload.uris
+      // Accept an old single-file caller without iterating over its characters.
+      if (typeof payload === "string") files = [payload]
+      else if (Array.isArray(payload)) files = payload
+      if (!Array.isArray(files) || !files.length || files.some(function(file) { return typeof file !== "string" || !file.length })) {
+        root.state = Object.assign({}, root.state, {error:"Invalid file list. Please open the file again."})
+        return
+      }
+      root.open()
+      root.send("launch-files", files)
+    }
     function dock(value: bool): void { root.send("dock", value); if (value) { root.state = Object.assign({}, root.state, {docked:true}); root.open() } else { root.state = Object.assign({}, root.state, {docked:false}); root.close() } }
     function doubleSize(value: bool): void { root.send("double-size", value) }
     function open(): void { root.open() }
